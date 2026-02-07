@@ -1,7 +1,9 @@
 package agent
 
 import (
+	"errors"
 	"log"
+	"os/exec"
 	"time"
 
 	"github.com/nabutabu/subd/client"
@@ -83,7 +85,27 @@ func diffServices(desiredServices, currServices map[string]types.Service) []stri
 	return result
 }
 
+func performActions(actions []string) error {
+	var flag bool = false
+	for _, action := range actions {
+		cmd := exec.Command(action)
+		_, err := cmd.CombinedOutput()
+		if err != nil {
+			flag = true
+			log.Printf("failed to reconcile service with the following command: %s", action)
+		}
+	}
+
+	if flag {
+		return errors.New("Failed to do all actions")
+	}
+
+	return nil
+}
+
 func (a *Agent) diff(desiredState, currState *types.State) {
 	// check if services are different
-	diffServices(desiredState.Services, currState.Services)
+	actions := diffServices(desiredState.Services, currState.Services)
+
+	performActions(actions)
 }
