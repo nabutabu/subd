@@ -44,14 +44,46 @@ func (a *Agent) Check() {
 	}
 
 	// Send heartbeat through api
-	_, err = a.dominator.Heartbeat(*currState)
+	desiredState, err := a.dominator.Heartbeat(*currState)
 	if err != nil {
 		log.Println(err)
 	}
 
-	// Receive desired state in api response
-
-	// Compute diff
+	// Receive desired state in api response and Compute diff
+	a.diff(desiredState, currState)
 
 	// Reconcile if needed
+}
+
+/*
+*
+@params
+desiredServices: services that should be active on the Host
+currServices: services currently active on the Host
+@return
+[]string: array of systemctl actions that either start or stop services
+*/
+func diffServices(desiredServices, currServices map[string]types.Service) []string {
+	var result []string
+	for _, service := range desiredServices {
+		if _, found := currServices[service.Name]; !found {
+			// service not found, add to Host
+			result = append(result, "systemctl start "+service.Name)
+		}
+	}
+
+	// check for extra services
+	for _, service := range currServices {
+		if _, found := desiredServices[service.Name]; !found {
+			// this service should not exist, kill it
+			result = append(result, "systemctl stop "+service.Name)
+		}
+	}
+
+	return result
+}
+
+func (a *Agent) diff(desiredState, currState *types.State) {
+	// check if services are different
+	diffServices(desiredState.Services, currState.Services)
 }

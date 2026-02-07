@@ -1,9 +1,11 @@
 package types
 
 type Service struct {
-	Name string
+	Name        string
+	Sub         string
+	Description string
 }
 
 type State struct {
-	Services []Service
+	Services map[string]Service
 }

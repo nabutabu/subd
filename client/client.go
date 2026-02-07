@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	HEARTBEAT = "/v1/heatbeat"
+	HEARTBEAT = "/v1/heartbeat"
 )
 
 type Client struct {
